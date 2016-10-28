@@ -7,29 +7,17 @@ public class ServidorWeb {
         int porta; 		//porta aonde o servidor vai aguardar por pedido de conexao.
         ServerSocket sw; 	//Socket servidor
         Socket cw;
-        //de um valor para a porta!
-
-
-        porta = 8080;
-
+        porta = 8080; // escolhendo a porta para o Socket
         try {
-
-            sw = new ServerSocket(porta);
-            sw.setReuseAddress(true);
-
+            sw = new ServerSocket(porta); // Criar o socket Servidor
             while(true) {
-                cw = sw.accept();
-
-                ConexaoWeb conexaoWeb = new ConexaoWeb(cw);
-
-                System.out.println("Aceitou conexao");
-                conexaoWeb.start();
+                cw = sw.accept(); // Deixar o socket Servidor aceitando conexões
+                ConexaoWeb conexaoWeb = new ConexaoWeb(cw); // Tratar o pedido de conexão
+                conexaoWeb.start(); //  Trocar informações com o cliente
             }
-
         }
         catch(IOException e) {
             System.err.println(e.toString());
-            System.err.println("Servidor foi abortardo");
         }
     }
 }

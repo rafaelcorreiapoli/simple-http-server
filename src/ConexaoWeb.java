@@ -11,7 +11,7 @@ public class ConexaoWeb extends Thread {
     private Socket socket; 					//socket que vai tratar com o cliente.
     private DataOutputStream log;
 
-    //coloque aqui o construtor
+    // Construtor do Socket
 
     ConexaoWeb(Socket s) {
         this.socket = s;
@@ -22,7 +22,6 @@ public class ConexaoWeb extends Thread {
         }
     }
 
-    //metodo TrataConexao, aqui serao trocadas informacoes com o Browser...
 
     private String getDateString() {
         return new Date().toString();
@@ -65,10 +64,10 @@ public class ConexaoWeb extends Thread {
         String versao = ""; 			//String que guarda a versao do Protocolo.
         File arquivo; 				//Objeto para os arquivos que vao ser enviados.
         String nomeArquivo; 				//String para o nome do arquivo.
-        String raiz = "/home/rafa93br/site"; 				//String para o diretorio raiz.
+        String raiz = System.getProperty("user.dir") + "/site/"; 				//String para o diretorio raiz.
         String inicio;				//String para guardar o inicio da linha
         String senhaUser="";		//String para armazenar o nome e a senha do usuario
-        String serverName = "Java Sucks";
+        String serverName = "Trabalho de Redes";
         String base64auth = "";
         Date now = new Date();
 
@@ -88,11 +87,9 @@ public class ConexaoWeb extends Thread {
             nomeArquivo = nomeArquivo.endsWith("/") ? DEFAULT_INDEX : nomeArquivo;
             versao = st.nextToken();
 
-            log.writeBytes(this.socket.getInetAddress().getHostAddress() + " " + this.socket.getInetAddress().getHostName() + " - [" + now + "]\n \"" + line + "\"");
-            System.out.println("Metodo " + metodo);
-            System.out.println("nomeArquivo " + nomeArquivo);
-            System.out.println("versao " + versao);
+            log.writeBytes(this.socket.getInetAddress().getHostAddress() + " " + this.socket.getInetAddress().getHostName() + " - [" + now + "]\n \"" + line + "\""); // escrevendo no Log
 
+            // verifica o método usado no request
             if (metodo.equals(METHOD_GET)) {
                 String nextLine;
                 while (!(nextLine = is.readLine()).isEmpty()) {
@@ -102,8 +99,8 @@ public class ConexaoWeb extends Thread {
                         String key = stNextLine.nextToken();
                         String host = stNextLine.nextToken();
                         System.out.println("host " + host);
-                        if (host.equals("localhost2:8080")) {
-                            raiz = "/home/rafa93br/host2";
+                        if (host.equals("localhost2")) {
+                            raiz = System.getProperty("user.dir") + "/site2/";
                         }
                     }
 
