@@ -12,7 +12,6 @@ public class ConexaoWeb extends Thread {
     private DataOutputStream log;
 
     // Construtor do Socket
-
     ConexaoWeb(Socket s) {
         this.socket = s;
         try {
@@ -27,6 +26,9 @@ public class ConexaoWeb extends Thread {
         return new Date().toString();
     }
 
+    /**
+     * Responder Not found
+     */
     private void notFound(DataOutputStream os) {
         try {
             os.writeBytes("HTTP/1.1 404 Not Found\n");
@@ -39,6 +41,9 @@ public class ConexaoWeb extends Thread {
         }
     }
 
+    /**
+     * Responder Unauthorized
+     */
     private void unauthorized(DataOutputStream os) {
         try {
             os.writeBytes("HTTP/1.1 401 Unauthorized\n");
@@ -51,6 +56,9 @@ public class ConexaoWeb extends Thread {
         }
     }
 
+    /**
+     * Verificar se credencial enviada é válida
+     */
     private boolean authUser(String base64) {
         String encoded;
         encoded = Base64.getEncoder().encodeToString((USERNAME + ":" + PASSWORD).getBytes());
@@ -75,9 +83,15 @@ public class ConexaoWeb extends Thread {
         DataOutputStream os = null;
 
         try {
+            /**
+             * Inicializando input e output
+             */
             os = new DataOutputStream(this.socket.getOutputStream());
             is = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
 
+            /**
+             * Ler metodo HTTP
+             */
             String line;
             line = is.readLine();
             StringTokenizer st = new StringTokenizer(line);
@@ -87,12 +101,21 @@ public class ConexaoWeb extends Thread {
             nomeArquivo = nomeArquivo.endsWith("/") ? DEFAULT_INDEX : nomeArquivo;
             versao = st.nextToken();
 
+
             log.writeBytes(this.socket.getInetAddress().getHostAddress() + " " + this.socket.getInetAddress().getHostName() + " - [" + now + "]\n \"" + line + "\""); // escrevendo no Log
 
-            // verifica o método usado no request
+            /**
+             * Caso o método seja GET
+             */
             if (metodo.equals(METHOD_GET)) {
                 String nextLine;
                 while (!(nextLine = is.readLine()).isEmpty()) {
+                    /**
+                     * Encontrar Header "Host"
+                     * Os hosts deveriam ser configurados em arquivo de configuração por exemplo httpd.conf
+                     * Para simplificar, este webserver não tem este arquivo de configuração e apenas responderá
+                     * pelo virtual host "localhost2", servindo o conteúdo da pasta "site2"
+                     */
                     if (nextLine.startsWith(("Host: "))) {
                         System.out.println(nextLine);
                         StringTokenizer stNextLine = new StringTokenizer(nextLine);
@@ -104,6 +127,9 @@ public class ConexaoWeb extends Thread {
                         }
                     }
 
+                    /**
+                     * Verificar se no request há cabeçalho de autorização e guarda-lo na variável base64auth
+                     */
                     if (nextLine.startsWith("Authorization: ")) {
                         System.out.println(nextLine);
                         StringTokenizer stNextLine = new StringTokenizer(nextLine);
@@ -115,16 +141,23 @@ public class ConexaoWeb extends Thread {
                     }
                 }
 
+                /**
+                 * Se o request tenta acessar algo na pasta /protegido
+                 */
                 if (nomeArquivo.startsWith(("/protegido"))) {
+
                     if (!base64auth.equals("")) {
                         if (this.authUser(base64auth)) {
+                           // É uma credencial válida
                             System.out.println("AUTH OK!");
                         } else {
+                            // A credencial não é válida, respondo Unauthorized
                             System.out.println("auth failed");
                             this.unauthorized(os);
                             throw new Exception("auth failed");
                         }
                     } else {
+                        // Se não enviou autorização nos headers, já respondo Unauthorized
                         System.out.println("no base64 found");
                         this.unauthorized(os);
                         throw new Exception("auth failed");
@@ -132,13 +165,18 @@ public class ConexaoWeb extends Thread {
                 }
 
                 System.out.println("===METHOD GET===");
+                /**
+                 * Ler arquivo pedido
+                 */
                 ct = this.tipoArquivo(nomeArquivo);
-
                 arquivo = new File(raiz, nomeArquivo);
                 FileInputStream fis = new FileInputStream(arquivo);
                 byte[] dado = new byte[(int) arquivo.length()];
                 fis.read(dado);
 
+                /**
+                 * Responder OK, enviando o conteudo do arquivo
+                 */
                 os.writeBytes("HTTP/1.1 200 OK\n");
                 os.writeBytes("Date: " + now.toString() + "\n");
                 os.writeBytes("Server: " + serverName + "\n");
