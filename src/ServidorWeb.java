@@ -23,7 +23,7 @@ public class ServidorWeb {
                 ConexaoWeb conexaoWeb = new ConexaoWeb(cw);
 
                 System.out.println("Aceitou conexao");
-                conexaoWeb.trataConexao();
+                conexaoWeb.start();
             }
 
         }

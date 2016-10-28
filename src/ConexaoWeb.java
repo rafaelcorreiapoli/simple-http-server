@@ -2,18 +2,24 @@ import java.net.*;
 import java.io.*;
 import java.util.*;
 
-public class ConexaoWeb {
+public class ConexaoWeb extends Thread {
     private static String DEFAULT_INDEX = "index.html";
     private static String SERVER_NAME = "Java sucks";
     private static String METHOD_GET = "GET";
     private static String USERNAME = "admin";
     private static String PASSWORD = "password";
-    Socket socket; 					//socket que vai tratar com o cliente.
+    private Socket socket; 					//socket que vai tratar com o cliente.
+    private DataOutputStream log;
 
     //coloque aqui o construtor
 
     ConexaoWeb(Socket s) {
         this.socket = s;
+        try {
+            this.log = new DataOutputStream(new FileOutputStream("WebLog.txt",true));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     //metodo TrataConexao, aqui serao trocadas informacoes com o Browser...
@@ -21,6 +27,7 @@ public class ConexaoWeb {
     private String getDateString() {
         return new Date().toString();
     }
+
     private void notFound(DataOutputStream os) {
         try {
             os.writeBytes("HTTP/1.1 404 Not Found\n");
@@ -45,13 +52,14 @@ public class ConexaoWeb {
         }
     }
 
-    private Boolean authUser(String base64) {
-        String encoded = Base64.getEncoder().encodeToString((USERNAME + ":" + PASSWORD).getBytes());
+    private boolean authUser(String base64) {
+        String encoded;
+        encoded = Base64.getEncoder().encodeToString((USERNAME + ":" + PASSWORD).getBytes());
         System.out.println("encoded " + encoded);
-        return base64.equals(encoded);
+        return encoded.equals(base64);
     }
 
-    public void trataConexao() {
+    public void run() {
         String metodo=""; 				//String que vai guardar o metodo HTTP requerido
         String ct; 					//String que guarda o tipo de arquivo: text/html;image/gif....
         String versao = ""; 			//String que guarda a versao do Protocolo.
@@ -80,7 +88,7 @@ public class ConexaoWeb {
             nomeArquivo = nomeArquivo.endsWith("/") ? DEFAULT_INDEX : nomeArquivo;
             versao = st.nextToken();
 
-
+            log.writeBytes(this.socket.getInetAddress().getHostAddress() + " " + this.socket.getInetAddress().getHostName() + " - [" + now + "]\n \"" + line + "\"");
             System.out.println("Metodo " + metodo);
             System.out.println("nomeArquivo " + nomeArquivo);
             System.out.println("versao " + versao);
@@ -111,7 +119,7 @@ public class ConexaoWeb {
                 }
 
                 if (nomeArquivo.startsWith(("/protegido"))) {
-                    if (!base64auth.isEmpty()) {
+                    if (!base64auth.equals("")) {
                         if (this.authUser(base64auth)) {
                             System.out.println("AUTH OK!");
                         } else {
@@ -141,6 +149,7 @@ public class ConexaoWeb {
                 os.writeBytes("Content-type: " + ct + "\n");
                 os.writeBytes("\n");
                 os.write(dado);
+
             }
 
         } catch(FileNotFoundException e)
@@ -160,6 +169,10 @@ public class ConexaoWeb {
                 if (os != null) {
                     os.close();
                     System.out.println("closing os");
+                }
+                if (this.log != null){
+                    this.log.close();
+                    System.out.println("closing log");
                 }
             } catch (IOException e) {
 
